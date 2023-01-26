@@ -1,0 +1,36 @@
+external-url-prefix: "http://test.test"
+keysets:
+  testing-ca:
+    path-prefix: keys-rsa
+    default-password: secret
+    keys:
+      root:
+        path: root.key.pem
+      interm:
+        path: interm.key.pem
+      tsa:
+        path: tsa.key.pem
+      tsa2:
+        path: tsa2.key.pem
+      interm-ocsp:
+        path: interm-ocsp.key.pem
+      signer1:
+        path: signer.key.pem
+      signer2:
+        path: signer2.key.pem
+  other-keyset:
+    template: testing-ca
+    path-prefix: keys-ed25519
+    default-password: null
+
+pki-architectures:
+  testing-ca: full-service-config.yml
+  testing-ca-2:
+    template: testing-ca
+    entity-defaults:
+      organizational-unit-name: Test OU
+  testing-ca-3:
+    keyset: other-keyset
+    template: testing-ca-2
+    entity-defaults:
+      country-name: FR

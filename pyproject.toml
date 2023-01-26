@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "pki"
+version = "0.1.0"
+description = "PKi for GOST standards"
+authors = ["MrEndor <mrendorer@gmail.com>"]
+license = "Apache-2.0"
+#readme = "README.md"
+packages = [
+    { include = "dss_dummy_server" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+asn1crypto = { path = "./asn1crypto" }
+certomancer = { path = "./certomancer", extras = ["web-api", "pkcs12"] }
+oscrypto = { path = "./oscrypto" }
+gostcrypto = { path = "./gostcrypto" }
+pyHanko = { path = "./pyHanko", extras = ["image-support", "opentype", "xmp"] }
+pygost = "^5.11"
+aiohttp = "^3.8.3"
+uwsgi = "^2.0.21"
+gunicorn = "^20.1.0"
+uvicorn = "^0.20.0"
+fastapi = "^0.89.0"
+fastapi-utils = "^0.2.1"
+python-multipart = "^0.0.5"
+streaming-form-data = "^1.11.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,1 @@
+from gostcrypto.gostsignature import CURVES_R_1323565_1_024_2019

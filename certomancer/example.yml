@@ -1,0 +1,234 @@
+external-url-prefix: "http://ca.example.com"
+keysets:
+  testing-ca:
+    path-prefix: tests/data/keys-rsa
+    keys:
+      root:
+        path: root.key.pem
+        password: secret
+      interm:
+        path: interm.key.pem
+        password: secret
+      tsa:
+        path: tsa.key.pem
+        password: secret
+      tsa2:
+        path: tsa2.key.pem
+        password: secret
+      interm-ocsp:
+        path: interm-ocsp.key.pem
+        password: secret
+      signer1:
+        path: signer.key.pem
+        password: secret
+      signer2:
+        path: signer2.key.pem
+        password: secret
+      aa:
+        path: aa.key.pem
+
+pki-architectures:
+  testing-ca:
+    keyset: testing-ca
+    entity-defaults:
+      country-name: BE
+      organization-name: Testing Authority
+    entities:
+      root:
+        common-name: Root CA
+      interm:
+        common-name: Intermediate CA
+      tsa:
+        common-name: Time Stamping Authority
+      aa:
+        common-name: Attribute Authority
+      interm-ocsp:
+        common-name: OCSP responder
+      signer1:
+        organizational-unit-name: Signers
+        common-name: Alice
+      signer2:
+        organizational-unit-name: Signers
+        common-name: Bob
+    certs:
+      root:
+        subject: root
+        subject-key: root
+        issuer: root
+        authority-key: root
+        validity:
+          valid-from: "2000-01-01T00:00:00+0000"
+          valid-to: "2500-01-01T00:00:00+0000"
+        profiles:  # will auto-populate the CRL distribution points extension for all issued certs
+          - id: simple-ca
+            params:
+              crl-repo: root
+      interm:
+        issuer: root
+        validity:
+          valid-from: "2000-01-01T00:00:00+0000"
+          valid-to: "2100-01-01T00:00:00+0000"
+        profiles:
+          - id: simple-ca
+            params:
+              max-path-len: 0
+              crl-repo: interm
+              ocsp-service: interm
+      interm-ocsp:
+        issuer: interm
+        validity:
+          valid-from: "2000-01-01T00:00:00+0000"
+          valid-to: "2100-01-01T00:00:00+0000"
+        profiles:
+          - ocsp-responder
+      tsa:
+        issuer: root
+        validity:
+          valid-from: "2000-01-01T00:00:00+0000"
+          valid-to: "2030-01-01T00:00:00+0000"
+        extensions:  # explicitly providing extensions also works
+          - id: key_usage
+            critical: true
+            smart-value:
+              schema: key-usage
+              params: [digital_signature]
+          - id: extended_key_usage
+            critical: true
+            value: [time_stamping]
+          - id: crl_distribution_points
+            smart-value:
+              schema: crl-dist-url
+              params: {crl-repo-names: [root]}
+      tsa2:
+        template: tsa
+        subject: tsa
+        subject-key: tsa2
+        validity:
+          valid-from: "2029-01-01T00:00:00+0000"
+          valid-to: "2060-01-01T00:00:00+0000"
+      signer1:
+        issuer: interm
+        validity:
+          valid-from: "2020-01-01T00:00:00+0000"
+          valid-to: "2022-01-01T00:00:00+0000"
+        profiles:
+          - digsig-commitment
+      signer2:
+        template: signer1
+        revocation:
+          revoked-since: "2020-12-01T00:00:00+0000"
+          reason: key_compromise
+      signer1-long:
+        subject: signer1
+        template: signer1
+        validity:
+          valid-from: "2020-01-01T00:00:00+0000"
+          valid-to: "2030-01-01T00:00:00+0000"
+      role-aa:
+        subject: aa
+        issuer: root
+        validity:
+          valid-from: "2000-01-01T00:00:00+0000"
+          valid-to: "2100-01-01T00:00:00+0000"
+        extensions:
+          - id: key_usage
+            critical: true
+            smart-value:
+              schema: key-usage
+              params: [digital_signature, crl_sign]
+          - id: aa_controls
+            critical: true
+            value:
+              path_len_constraint: 0
+              permitted_attrs: ['role']
+    attr-certs:
+      test-ac:
+        holder:
+          name: signer2
+          cert: signer2
+        issuer: aa
+        issuer-cert: role-aa
+        attributes:
+          - id: role
+            smart-value:
+              schema: role-syntax
+              params:
+                name: {type: email, value: bigboss@example.com}
+        validity:
+          valid-from: "2010-01-01T00:00:00+0000"
+          valid-to: "2030-01-01T00:00:00+0000"
+        extensions:
+          - id: crl_distribution_points
+            smart-value:
+              schema: crl-dist-url
+              params:
+                crl-repo-names: [role-aa]
+          - id: authority_information_access
+            smart-value:
+              schema: aia-urls
+              params:
+                ocsp-responder-names: [role-aa]
+        revocation:
+          revoked-since: "2020-12-01T00:00:00+0000"
+          reason: key_compromise
+      unrevokable-test-ac:
+        holder:
+          name: signer1
+          cert: signer1
+        issuer: aa
+        issuer-cert: role-aa
+        attributes:
+          - id: role
+            multivalued: true
+            smart-value:
+              schema: role-syntax
+              params:
+                - name: {type: email, value: alice@example.com}
+                - name: {type: email, value: alice2@example.com}
+        validity:
+          valid-from: "2010-01-01T00:00:00+0000"
+          valid-to: "2030-01-01T00:00:00+0000"
+        extensions:
+          - id: no_rev_avail
+    services:
+      ocsp:
+        interm:
+          for-issuer: interm
+          responder-cert: interm-ocsp
+          signing-key: interm-ocsp
+        role-aa:
+          for-issuer: aa
+          responder-cert: role-aa
+          signing-key: aa
+          is-aa-responder: true
+      crl-repo:
+        root:
+          for-issuer: root
+          signing-key: root
+          simulated-update-schedule: "P90D"
+        interm:
+          for-issuer: interm
+          signing-key: interm
+          simulated-update-schedule: "P30D"
+        role-aa:
+          for-issuer: aa
+          signing-key: aa
+          simulated-update-schedule: "P30D"
+          crl-type: ac-only
+      cert-repo:
+        root:
+          for-issuer: root
+          publish-issued-certs: yes
+        interm:
+          for-issuer: interm
+          publish-issued-certs: no
+      attr-cert-repo:
+        role-aa:
+          for-issuer: aa
+      time-stamping:
+        tsa:
+          signing-key: tsa
+          signing-cert: tsa
+        tsa2:
+          signing-key: tsa2
+          signing-cert: tsa2

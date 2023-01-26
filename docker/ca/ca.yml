@@ -1,0 +1,266 @@
+external-url-prefix: "https://pki-ca-mrendor.cloud.okteto.net"
+
+keysets:
+  testing-ca:
+    path-prefix: tests/data/keys
+    keys:
+      root:
+        path: ca-root.key.pem
+        password: secret
+      interm:
+        path: interm.key.pem
+        password: secret
+      interm-ocsp:
+        path: interm-ocsp.key.pem
+        password: secret
+      "Школа №1788":
+        path: school1788.key.pem
+        password: secret
+      "Школа №1":
+        path: school1.key.pem
+        password: secret
+      test1:
+        path: test1.key.pem
+        password: secret
+      test3:
+        path: test3.key.pem
+        password: secret
+      signer-template:
+        path: template.key.pem
+        password: secret
+      tsa:
+        path: tsa.key.pem
+        password: secret
+
+pki-architectures:
+  testing-ca:
+    keyset: testing-ca
+    entity-defaults:
+      country-name: RU
+      organization-name: Testing Authority
+    entities:
+      root:
+        common-name: Root CA
+      interm:
+        common-name: Intermediate CA
+      interm-ocsp:
+        common-name: OCSP responder
+      tsa:
+        common-name: Time Stamping Authority
+      signer-template:
+        common-name: Template for signer
+      "Школа №1788":
+        common-name: Школа №1788
+      "Школа №1":
+        common-name: Школа №1
+      test1:
+        common-name: Test1
+      test3:
+        common-name: Test3
+    certs:
+      root:
+        subject: root
+        subject-key: root
+        issuer: root
+        authority-key: root
+        signature_algo: id-tc26-signwithdigest-gost3410-12-512
+        digest_algo: id-tc26-gost3411-12-512
+        validity:
+          valid-from: "2020-01-01T00:00:00+0000"
+          valid-to: "2025-01-01T00:00:00+0000"
+        profiles:
+          - id: simple-ca
+            params:
+              crl-repo: root
+        extensions:
+          - id: key_usage
+            critical: true
+            smart-value:
+              schema: key-usage
+              params: [digital_signature, key_cert_sign, crl_sign, non_repudiation]
+          - id: basic_constraints
+            critical: true
+            value:
+              ca: true
+      interm:
+        issuer: root
+        validity:
+          valid-from: "2000-01-01T00:00:00+0000"
+          valid-to: "2100-01-01T00:00:00+0000"
+        profiles:
+          - id: simple-ca
+            params:
+              crl-repo: interm
+              ocsp-service: interm
+      interm-ocsp:
+        issuer: interm
+        validity:
+          valid-from: "2000-01-01T00:00:00+0000"
+          valid-to: "2100-01-01T00:00:00+0000"
+        profiles:
+          - ocsp-responder
+      tsa:
+        issuer: root
+        signature_algo: id-tc26-signwithdigest-gost3410-12-512
+        digest_algo: id-tc26-gost3411-12-512
+        validity:
+          valid-from: "2000-01-01T00:00:00+0000"
+          valid-to: "2030-01-01T00:00:00+0000"
+        extensions:
+          - id: key_usage
+            critical: true
+            smart-value:
+              schema: key-usage
+              params: [digital_signature]
+          - id: extended_key_usage
+            critical: true
+            value: [time_stamping]
+      signer-template:
+        issuer: interm
+        signature_algo: id-tc26-signwithdigest-gost3410-12-512
+        digest_algo: id-tc26-gost3411-12-512
+        validity:
+          valid-from: "2000-01-01T00:00:00+0000"
+          valid-to: "2300-01-01T00:00:00+0000"
+        extensions:
+          - id: key_usage
+            critical: true
+            smart-value:
+              schema: key-usage
+              params: [digital_signature, non_repudiation, key_encipherment, data_encipherment]
+          - id: extended_key_usage
+            critical: true
+            value: [client_auth]
+          - id: crl_distribution_points
+            smart-value:
+              schema: crl-dist-url
+              params:
+                crl-repo-names: [interm]
+          - id: authority_information_access
+            smart-value:
+              schema: aia-urls
+              params:
+                ocsp-responder-names: [interm]
+                ca-issuer-links:
+                  - repo: interm
+                  - repo: root
+                    include-repo-authority: yes
+                    cert-labels: [interm]
+      "Школа №1788":
+        template: signer-template
+        validity:
+          valid-from: "2010-01-01T00:00:00+0000"
+          valid-to: "2030-01-01T00:00:00+0000"
+        extensions:
+          - id: subject_alt_name
+            smart-value:
+              schema: general-names
+              params:
+                - { type: email, value: school@school1788.com }
+      "Школа №1":
+        template: signer-template
+        validity:
+          valid-from: "2010-01-01T00:00:00+0000"
+          valid-to: "2030-01-01T00:00:00+0000"
+        extensions:
+          - id: subject_alt_name
+            smart-value:
+              schema: general-names
+              params:
+                - { type: email, value: school@school1.com }
+      test1:
+        template: signer-template
+        validity:
+          valid-from: "2010-01-01T00:00:00+0000"
+          valid-to: "2030-01-01T00:00:00+0000"
+        extensions:
+          - id: subject_alt_name
+            smart-value:
+              schema: general-names
+              params:
+                - { type: email, value: test1@school1788.com }
+      test3:
+        template: signer-template
+        validity:
+          valid-from: "2010-01-01T00:00:00+0000"
+          valid-to: "2030-01-01T00:00:00+0000"
+        extensions:
+          - id: subject_alt_name
+            smart-value:
+              schema: general-names
+              params:
+                - { type: email, value: test3@school1.com }
+    services:
+      crl-repo:
+        root:
+          for-issuer: root
+          signing-key: root
+          simulated-update-schedule: "P90D"
+        interm:
+          for-issuer: interm
+          signing-key: interm
+          simulated-update-schedule: "P30D"
+      ocsp:
+        interm:
+          for-issuer: interm
+          responder-cert: interm-ocsp
+          signing-key: interm-ocsp
+      cert-repo:
+        root:
+          for-issuer: root
+          publish-issued-certs: yes
+        interm:
+          for-issuer: interm
+          publish-issued-certs: yes
+      time-stamping:
+        tsa:
+          signature_algo: id-tc26-gost3410-12-512
+          digest_algo: id-tc26-gost3411-12-512
+          signing-key: tsa
+          signing-cert: tsa
+#       time-stamping:
+#         tsa:
+#           signing-key: tsa
+#           signing-cert: tsa
+#         extensions:
+#           - id: subject_alt_name
+#             smart-value:
+#               schema: general-names
+#               params:
+#                 - {type: email, value: school1788@example.com}
+#       signer-school1:
+#         issuer: root
+#         digest_algo: id-tc26-gost3411-12-512
+#         validity:
+#           valid-from: "2010-01-01T00:00:00+0000"
+#           valid-to: "2030-01-01T00:00:00+0000"
+#         extensions:
+#           - id: subject_alt_name
+#             smart-value:
+#               schema: general-names
+#               params:
+#                 - {type: email, value: school1@example.com}
+#       supply-manager-school1788:
+#         issuer: root
+#         digest_algo: id-tc26-gost3411-12-512
+#         validity:
+#           valid-from: "2010-01-01T00:00:00+0000"
+#           valid-to: "2030-01-01T00:00:00+0000"
+#         extensions:
+#           - id: subject_alt_name
+#             smart-value:
+#               schema: general-names
+#               params:
+#                 - {type: email, value: manager-school1788@example.com}
+#       supply-manager-school1:
+#         issuer: root
+#         digest_algo: id-tc26-gost3411-12-512
+#         validity:
+#           valid-from: "2010-01-01T00:00:00+0000"
+#           valid-to: "2030-01-01T00:00:00+0000"
+#         extensions:
+#           - id: subject_alt_name
+#             smart-value:
+#               schema: general-names
+#               params:
+#                 - {type: email, value: manager-school1@example.com}

@@ -1,0 +1,10 @@
+version: "3.9"
+
+services:
+  ca:
+    ports:
+      - 9000:9000
+
+  dss:
+    ports:
+      - 8001:8000

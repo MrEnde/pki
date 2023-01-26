@@ -1,0 +1,14 @@
+[run]
+    omit = *docs*
+           *test*
+           *venv*
+           setup.py
+           pyhanko/pdf_utils/crypt/_saslprep.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    pragma: nocover
+    raise AssertionError
+    raise NotImplementedError
+precision = 2

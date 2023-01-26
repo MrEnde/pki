@@ -1,0 +1,83 @@
+version: "3.9"
+
+services:
+  ca:
+    <<: &ca
+      image: ca:development
+      build:
+        context: .
+        dockerfile: ./docker/ca/Dockerfile
+        args:
+          PROJECT_ENV: development
+#        cache_from:
+#          - "*"
+      volumes:
+        - "./docker/ca/ca.yml:/certomancer/config.yml"
+        - "./docker/ca/server.ini:/certomancer/server.ini"
+        - "./:/code/"
+        - "private_keys:/certomancer/tests/data/keys" # Don't do this in production
+    command: /usr/local/bin/uwsgi /certomancer/server.ini
+    env_file:
+      - ./docker/ca/.env
+    networks:
+      - ca-network
+    deploy:
+     resources:
+       limits:
+         cpus: '0.75'
+         memory: '2Gi'
+       reservations:
+         cpus: '0.25'
+         memory: '1Gi'
+
+  dss:
+    <<: &dss
+      image: dss:development
+      build:
+        context: .
+        dockerfile: ./docker/dss/Dockerfile
+        args:
+          PROJECT_ENV: development
+#        cache_from:
+#           - "dss-server:development"
+#           - "dss-server:latest"
+#          - "*"
+      volumes:
+        - "./docker/ca/ca.yml:/certomancer/example.yml"
+        - ".:/code/"
+        - "private_keys:/certomancer/tests/data/keys"
+    command: /usr/local/bin/gunicorn --bind 0.0.0.0:8000 \
+      --worker-class uvicorn.workers.UvicornWorker dss_dummy_server.runner:application \
+      --timeout 300
+    env_file:
+      - ./docker/dss/.env
+    networks:
+      - ca-network
+    depends_on:
+      - ca
+    deploy:
+     resources:
+       limits:
+         cpus: '0.75'
+         memory: '2Gi'
+       reservations:
+         cpus: '0.25'
+         memory: '1Gi'
+
+endpoints:
+  labels:
+    kubernetes.io/ingress.class: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    ingress.kubernetes.io/ssl-redirect: "false"
+  rules:
+    - path: /
+      service: ca
+      port: 9000
+
+volumes:
+  private_keys: {}
+
+networks:
+    ca-network:

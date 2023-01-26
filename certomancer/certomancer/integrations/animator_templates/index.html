@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Certomancer Animator &mdash; index</title>
+</head>
+<style>
+    td {
+        padding: 5pt;
+        text-align: center;
+    }
+    table {
+        border: 1px solid black;
+    }
+    thead {
+        margin-bottom: 1em;
+    }
+</style>
+<body>
+<h1>Index of Certomancer PKI services</h1>
+<p>
+    This page lists all PKI services provided by this Certomancer Animator instance.
+    Right-click to copy links.
+</p>
+<hr/>
+{% for arch_services in pki_archs %}
+    {% include "arch_summary.html" %}
+{% endfor %}
+</body>
+</html>
