@@ -16,9 +16,8 @@ certomancer = { path = "./certomancer", extras = ["web-api", "pkcs12"] }
 oscrypto = { path = "./oscrypto" }
 gostcrypto = { path = "./gostcrypto" }
 pyHanko = { path = "./pyHanko", extras = ["image-support", "opentype", "xmp"] }
-pygost = "^5.11"
 aiohttp = "^3.8.3"
-uwsgi = "^2.0.21"
+uwsgi = "^2.0.23"
 gunicorn = "^20.1.0"
 uvicorn = "^0.20.0"
 fastapi = "^0.89.0"
